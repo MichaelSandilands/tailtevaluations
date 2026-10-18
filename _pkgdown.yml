@@ -1,34 +1,33 @@
-url: ~
+url: https://michaelsandilands.github.io/tailtevaluations/
 template:
   bootstrap: 5
-
 reference:
-  - title: Refresh pipeline
-    desc: >
-      The steps `_targets.R` strings together, in order: fetch each
-      authority, tidy, combine, validate, write and publish.
-    contents:
-      - tailte_api_url
-      - local_authorities
-      - pre_revaluation_authorities
-      - refresh_key
-      - fetch_authority
-      - tidy_properties
-      - empty_properties
-      - finalise_properties
-      - as_sf_itm
-      - validate_refresh
-      - read_previous_manifest
-      - write_outputs
-      - publish_config
-      - publish_outputs
-  - title: App
-    desc: The Shiny explorer and the logic behind it, all testable without Shiny.
-    contents:
-      - run_app
-      - load_valuations
-      - prepare_valuations
-      - filter_properties
-      - neighbour_candidates
-      - nearest_rows
-      - decompose_vs_neighbours
+- title: Refresh pipeline
+  desc: |
+    The steps `_targets.R` strings together, in order: fetch each authority, tidy, combine, validate, write and publish.
+  contents:
+  - tailte_api_url
+  - local_authorities
+  - pre_revaluation_authorities
+  - refresh_key
+  - fetch_authority
+  - tidy_properties
+  - empty_properties
+  - finalise_properties
+  - as_sf_itm
+  - validate_refresh
+  - read_previous_manifest
+  - write_outputs
+  - publish_config
+  - publish_outputs
+- title: App
+  desc: The Shiny explorer and the logic behind it, all testable without Shiny.
+  contents:
+  - run_app
+  - load_valuations
+  - prepare_valuations
+  - filter_properties
+  - neighbour_candidates
+  - nearest_rows
+  - decompose_vs_neighbours
+
