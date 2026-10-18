@@ -1,0 +1,94 @@
+name: Refresh valuations
+
+on:
+  schedule:
+    - cron: "23 4 * * *" # daily, 04:23 UTC; REFRESH_PERIOD (default weekly) decides whether the API is pulled
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Pull from the API even if this period is already done
+        type: boolean
+        default: false
+
+concurrency:
+  group: refresh-valuations
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      # Weekly by default: the valuation lists change slowly, and a free public
+      # API shouldn't be pulled more often than the data needs
+      REFRESH_PERIOD: ${{ inputs.force && 'always' || vars.REFRESH_PERIOD || 'week' }}
+      # Sent in the User-Agent, so Tailte can reach whoever runs this pipeline
+      TAILTE_CONTACT: ${{ vars.TAILTE_CONTACT || format('{0}/{1}', github.server_url, github.repository) }}
+      S3_BUCKET: ${{ vars.S3_BUCKET }}
+      S3_PREFIX: ${{ vars.S3_PREFIX || 'tailte-valuations' }}
+      S3_ENDPOINT: ${{ vars.S3_ENDPOINT }}
+      AWS_REGION: ${{ vars.AWS_REGION || 'auto' }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The R version and every package version come from renv.lock, so the
+      # scheduled refresh runs exactly what was tested. Tests and checks run
+      # in R-CMD-check.yaml on every push; this job only refreshes.
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: renv
+          use-public-rspm: true
+
+      - name: Install system libraries for sf
+        run: sudo apt-get update && sudo apt-get install -y libgdal-dev libgeos-dev libproj-dev libudunits2-dev
+
+      - uses: r-lib/actions/setup-renv@v2
+
+      # The targets store carries hashes between runs; without it every run
+      # rebuilds and re-uploads. Saved only on success, so a run that fails
+      # validation is retried from scratch next time.
+      - name: Restore pipeline state
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            _targets
+            data
+          key: targets-${{ github.run_id }}
+          restore-keys: targets-
+
+      - name: Run pipeline
+        run: Rscript -e 'targets::tar_make()'
+
+      - name: Save pipeline state
+        if: success()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            _targets
+            data
+          key: targets-${{ github.run_id }}
+
+      - name: Job summary
+        if: always()
+        run: |
+          Rscript -e '
+            p <- targets::tar_progress()
+            p <- p[!grepl("_[0-9a-f]{8,}$", p$name), ]
+            m <- if (file.exists("data/manifest.json")) jsonlite::read_json("data/manifest.json")
+            out <- c(
+              "### Tailte valuations refresh",
+              sprintf("Refresh period: `%s`", Sys.getenv("REFRESH_PERIOD")),
+              if (!is.null(m)) sprintf("Data last changed: %s; %s properties, %s floor lines",
+                                       m$updated_at, format(m$rows$total, big.mark = ","),
+                                       format(m$rows$floors, big.mark = ",")),
+              "", "| target | status |", "|---|---|",
+              sprintf("| %s | %s |", p$name, p$progress)
+            )
+            cat(out, sep = "\n", file = Sys.getenv("GITHUB_STEP_SUMMARY"), append = TRUE)
+          '

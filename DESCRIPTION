@@ -1,0 +1,45 @@
+Package: tailtevaluations
+Title: Tailte Eireann Commercial Valuations: Refresh Pipeline and Shiny
+    App
+Version: 0.4.0
+Authors@R: 
+    person("First", "Last", , "msand91@gmail.com", role = c("aut", "cre"))
+Description: Pulls every rating authority from the Tailte Eireann
+    Valuation API, validates the result and publishes Parquet, GeoJSON and
+    a manifest to S3-compatible object storage on a schedule, using a
+    'targets' pipeline. Includes a 'shiny' app for filtering properties,
+    finding the nearest neighbours of any property and explaining how its
+    valuation compares.
+License: MIT + file LICENSE
+Depends: 
+    R (>= 4.1.0)
+Imports: 
+    bslib (>= 0.8.0),
+    cli,
+    data.table,
+    htmltools,
+    httr2,
+    jsonlite,
+    leaflet,
+    nanoparquet,
+    nngeo,
+    paws.storage,
+    plotly,
+    reactable,
+    sf,
+    shiny (>= 1.8.0),
+    stats,
+    tools,
+    utils,
+    withr
+Suggests: 
+    covr,
+    pkgload,
+    spelling,
+    targets,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Encoding: UTF-8
+Language: en-GB
+Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.1.1

@@ -1,0 +1,11 @@
+docs
+_targets/
+data/
+.Renviron
+.Rhistory
+.RData
+.Rproj.user/
+.Rproj.user
+.httr-oauth
+.DS_Store
+.quarto
